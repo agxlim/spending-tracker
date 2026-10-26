@@ -1,0 +1,7 @@
+﻿Date ,Description , Amount 
+2026-10-01,Coffee,-3.50
+
+not-a-date,Lunch,-12.00
+2026-10-02,Lunch,abc
+2026-10-02,Zero,0.00
+2026-02-30,Bad day,-1.00
