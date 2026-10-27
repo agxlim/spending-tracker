@@ -2,7 +2,7 @@
 // which avoids hydration mismatches.
 
 import type { ISODate } from "./dates";
-import { centsToDecimalString, formatCents, type Cents } from "./money";
+import { bpsToPercentString, centsToDecimalString, formatCents, type Cents } from "./money";
 
 const LOCALE = "en-US";
 
@@ -27,4 +27,17 @@ export function dayLabel(date: ISODate): string {
 
 export function monthLabel(date: ISODate): string {
   return monthFormat.format(new Date(`${date}T00:00:00Z`));
+}
+
+/** "12.5%"-style label for basis points, to one decimal place; negative values keep their sign. */
+export function percent(bps: number): string {
+  const tenths = Math.trunc(Math.abs(bps) / 10) * 10;
+  return `${bps < 0 && tenths > 0 ? "-" : ""}${bpsToPercentString(tenths)}%`;
+}
+
+const weekdayFormat = new Intl.DateTimeFormat(LOCALE, { weekday: "short", timeZone: "UTC" });
+
+/** "Mon"-style weekday for a calendar day. */
+export function weekdayLabel(date: ISODate): string {
+  return weekdayFormat.format(new Date(`${date}T00:00:00Z`));
 }

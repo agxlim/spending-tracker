@@ -56,6 +56,14 @@ export function OnboardingForm() {
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="income">Monthly income</Label>
+        <Input id="income" name="income" inputMode="decimal" placeholder="Optional" aria-describedby="income-help" />
+        <p id="income-help" className="text-sm text-muted-foreground">
+          Optional. Used only to show your savings rate on the dashboard.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="currency">Currency</Label>
         <Select id="currency" name="currency" defaultValue="USD">
           {CURRENCIES.map((c) => (

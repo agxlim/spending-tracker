@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { monthStart, todayInTimeZone } from "@/lib/dates";
-import { parseCents, parsePercentBps } from "@/lib/money";
+import { parseCents, parseOptionalCents, parsePercentBps } from "@/lib/money";
 import { requireUser } from "@/lib/queries";
 import { onboardingInput } from "@/lib/schemas";
 
@@ -18,12 +18,15 @@ export async function completeOnboarding(
   const rateInput = String(formData.get("savingsRate") ?? "").trim();
   const savingsRateBps = rateInput === "" ? 0 : parsePercentBps(rateInput);
   if (savingsRateBps === null) return { error: "Enter your savings goal as a percentage, like 10." };
+  const incomeCents = parseOptionalCents(String(formData.get("income") ?? ""));
+  if (incomeCents === undefined) return { error: "Enter your income as a number, like 4000 or 4000.00." };
 
   const parsed = onboardingInput.safeParse({
     currency: formData.get("currency"),
     timezone: formData.get("timezone"),
     amountCents,
     savingsRateBps,
+    incomeCents,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { currency, timezone } = parsed.data;
@@ -38,6 +41,7 @@ export async function completeOnboarding(
       effective_month: monthStart(todayInTimeZone(timezone)),
       amount_cents: parsed.data.amountCents,
       savings_rate_bps: parsed.data.savingsRateBps,
+      income_cents: parsed.data.incomeCents,
     },
     { onConflict: "user_id,effective_month" },
   );

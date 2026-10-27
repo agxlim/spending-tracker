@@ -5,6 +5,7 @@ import {
   dailyStatusHistory,
   paceBudgetForMonth,
   safeToSpendToday,
+  savingsRateBps,
   spentInRange,
   type Txn,
 } from "@/lib/budget";
@@ -259,5 +260,23 @@ describe("dailyStatusHistory with a savings goal", () => {
     const days = dailyStatusHistory(budgets, txns, "2026-10-01", "2026-10-03");
     expect(days[0]).toMatchObject({ allowance: 0, status: "nospend" });
     expect(days[1]).toMatchObject({ allowance: 0, status: "over" });
+  });
+});
+
+describe("savingsRateBps", () => {
+  it("is the share of income not spent, in basis points", () => {
+    expect(savingsRateBps(400_000, 300_000)).toBe(2_500);
+    expect(savingsRateBps(400_000, 0)).toBe(10_000);
+    expect(savingsRateBps(400_000, 400_000)).toBe(0);
+  });
+
+  it("goes negative when spending exceeds income and above 100% with net refunds", () => {
+    expect(savingsRateBps(400_000, 500_000)).toBe(-2_500);
+    expect(savingsRateBps(400_000, -40_000)).toBe(11_000);
+  });
+
+  it("truncates toward zero", () => {
+    expect(savingsRateBps(300_000, 100_000)).toBe(6_666);
+    expect(savingsRateBps(300_000, 500_000)).toBe(-6_666);
   });
 });

@@ -29,7 +29,11 @@ describe("dashboardSummary", () => {
       remainingThisMonthCents: 134_000,
       daysLeft: 29,
       pacePercent: (3 / 31) * 100,
-      streaks: { current: 2, best: 2, noSpendThisMonth: 0 },
+      incomeCents: null,
+      savingsRateSoFarBps: null,
+      plannedSavingsRateBps: null,
+      streaks: { current: 2, best: 2, underThisMonth: 2, overThisMonth: 0, noSpendThisMonth: 0 },
+      recentDays: monthDays.slice(0, 2),
     });
     expect(monthDays).toHaveLength(31);
     expect(monthDays.slice(0, 3).map((d) => d.status)).toEqual(["under", "under", "future"]);
@@ -44,6 +48,44 @@ describe("dashboardSummary", () => {
     expect(summary.safeToSpendCents).toBe(5_344);
     expect(summary.streakTargetCents).toBe(4_275);
     expect(summary.monthDays[2]).toMatchObject({ date: "2026-10-03", allowance: 4_275, status: "future" });
+  });
+
+  it("shows the savings rate so far and if the whole budget is spent when income is set", () => {
+    const withIncome = [{ effectiveMonth: "2026-10-01", amountCents: 310_000, incomeCents: 400_000 }];
+    const txns = [spend("2026-10-01", 150_000, true), spend("2026-10-02", 10_000)];
+    const summary = dashboardSummary(withIncome, txns, "2026-10-01", "2026-10-03")!;
+    expect(summary.incomeCents).toBe(400_000);
+    // (400000 − 160000) / 400000 and (400000 − 310000) / 400000
+    expect(summary.savingsRateSoFarBps).toBe(6_000);
+    expect(summary.plannedSavingsRateBps).toBe(2_250);
+  });
+
+  it("uses the income from the budget row in effect this month", () => {
+    const rows = [
+      { effectiveMonth: "2026-09-01", amountCents: 300_000, incomeCents: 500_000 },
+      { effectiveMonth: "2026-10-01", amountCents: 300_000 },
+    ];
+    expect(dashboardSummary(rows, [], "2026-09-01", "2026-10-03")!.incomeCents).toBeNull();
+  });
+
+  it("lists up to the last 7 finished days, across months but not before signup", () => {
+    const summary = dashboardSummary(
+      [{ effectiveMonth: "2026-09-01", amountCents: 300_000 }, ...budgets],
+      [spend("2026-10-02", 900_000)],
+      "2026-09-28",
+      "2026-10-03",
+    )!;
+    expect(summary.recentDays.map((d) => [d.date, d.status])).toEqual([
+      ["2026-09-28", "nospend"],
+      ["2026-09-29", "nospend"],
+      ["2026-09-30", "nospend"],
+      ["2026-10-01", "nospend"],
+      ["2026-10-02", "over"],
+    ]);
+    const later = dashboardSummary(budgets, [], "2026-10-01", "2026-10-20")!;
+    expect(later.recentDays.map((d) => d.date)).toEqual([
+      "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19",
+    ]);
   });
 
   it("lists only today's month in the calendar days", () => {

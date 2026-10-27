@@ -32,6 +32,8 @@ Individuals managing their own money who want a lightweight way to stay under a 
 | **Monthly budget** | One total amount per calendar month. Unspent money does **not** roll over. |
 | **Safe to spend today** | `(budget − all one-offs this month − regular spending before today) ÷ days left in month (including today)`. Recalculated every day. Shown as $0 once the budget is used up. |
 | **Savings goal** | Optional share of the monthly budget the user wants left over (0–90%, default 0%). Set at onboarding and editable in Settings from the current month onward. |
+| **Monthly income** | Optional amount the user earns per month. Set at onboarding or in Settings, from the current month onward. Used only for the savings rate; it never changes the budget, safe to spend or streaks. |
+| **Savings rate** | `(income − everything spent this month, one-offs included) ÷ income`, shown on the dashboard when income is set, alongside the rate the user would reach by spending the whole budget, `(income − budget) ÷ income`. Can go negative. |
 | **Streak target** | The safe-to-spend formula run on the budget minus the savings goal. Equal to safe to spend when there's no savings goal. |
 | **Under-pace day** | A finished day where that day's spending ≤ that day's streak target. |
 | **No-spend day** | A finished day with $0 of spending. |
@@ -51,13 +53,13 @@ Individuals managing their own money who want a lightweight way to stay under a 
 | Area | What's included |
 |---|---|
 | **Accounts** | Email magic-link sign-in; one user, one currency (set at signup) |
-| **Budget** | Set and edit one total monthly budget and an optional savings goal (%); both carry into new months until changed |
+| **Budget** | Set and edit one total monthly budget, an optional savings goal (%) and an optional monthly income; all carry into new months until changed |
 | **Manual entry** | Add, edit, and delete a transaction: amount, date (defaults to today), merchant/note, category, and a **"one-off" toggle**. Refunds are entered as negative amounts. |
 | **CSV import** | Upload a bank CSV, map columns (date, amount, description), preview, then import. Exact duplicates (same date + amount + description) are skipped. |
 | **One-offs** | Flag any transaction as a one-off (on entry, on edit, or per row in the CSV preview). The dashboard shows "includes $X of one-offs" under the progress bar. |
 | **Categories** | Fixed default list (Groceries, Dining, Transport, Shopping, Bills, Entertainment, Health, Other). The app remembers merchant→category and uses it for future entries and imports. Categories are for insights only and have no limits. |
-| **Dashboard** | Safe to spend today (the headline number), spent vs. budget progress bar, days left, current streak (with today's streak target when a savings goal is set), and a month calendar where tapping a day shows its spending against its target |
-| **Streaks** | Current and best under-pace streak; no-spend days this month; calendar heatmap of the month (under pace / over pace / no-spend), judged against the streak target, on the dashboard and in Insights |
+| **Dashboard** | Safe to spend today (the headline number), spent vs. budget progress bar, days left, savings rate (when income is set), current streak (with today's streak target when a savings goal is set), and a month calendar where tapping a day shows its spending against its target |
+| **Streaks** | Current and best under-pace streak; the last 7 finished days, each marked underspent / overspent / no spend; counts of underspent, overspent and no-spend days this month; calendar heatmap of the month (under pace / over pace / no-spend), judged against the streak target, on the dashboard and in Insights |
 | **Insights** | Spending by category this month, top 5 merchants, this month vs. last month at the same day, cumulative spend vs. ideal-pace line chart |
 | **Responsive web** | Mobile-first layout that also works on desktop; installable as a PWA (home-screen icon) |
 
@@ -124,6 +126,7 @@ budgets (
   effective_month date not null               -- first day of month this amount starts applying
   amount_cents  bigint not null check (amount_cents > 0)
   savings_rate_bps int not null default 0 check (savings_rate_bps between 0 and 9000)  -- 1000 = 10%
+  income_cents  bigint null check (income_cents is null or income_cents > 0)   -- optional, for the savings rate only
   unique (user_id, effective_month)
 )
 -- Budget for month M = row with greatest effective_month <= M.
@@ -177,7 +180,8 @@ safeToSpendToday(budget, txns, today): cents
 dailyStatus(paceBudget, txns, month): Array<{date, spent, allowance, status: 'under'|'over'|'nospend'|'future'}>
   // allowance for day d = streak target: safe-to-spend on the streak budget as of day d
   // spent for day d = regular (non-one-off) transactions only
-streaks(dailyStatuses across months): { current, best, noSpendThisMonth }
+savingsRateBps(income, spent): bps            // trunc((income − spent) × 10000 ÷ income); negative when over income
+streaks(dailyStatuses across months): { current, best, underThisMonth, overThisMonth, noSpendThisMonth }
   // today is excluded until it ends; streaks continue across month boundaries
 ```
 **Edge cases:**
@@ -203,12 +207,12 @@ streaks(dailyStatuses across months): { current, best, noSpendThisMonth }
 | Route | Content |
 |---|---|
 | `/login` | Magic-link sign-in |
-| `/onboarding` | Currency, timezone (auto-detected), first monthly budget, optional savings goal |
-| `/` | Dashboard: safe to spend today, progress bar, streak, month calendar with day detail, quick-add button |
+| `/onboarding` | Currency, timezone (auto-detected), first monthly budget, optional savings goal, optional monthly income |
+| `/` | Dashboard: safe to spend today, progress bar, savings rate, streak with the last 7 days, month calendar with day detail, quick-add button |
 | `/transactions` | Month list with filters; add/edit/delete |
 | `/import` | CSV upload → map → preview → confirm; import history with undo |
 | `/insights` | Category breakdown, top merchants, vs. last month, pace chart, calendar heatmap |
-| `/settings` | Budget amount and savings goal, currency, timezone, sign out, delete account |
+| `/settings` | Budget amount, savings goal and monthly income, currency, timezone, sign out, delete account |
 
 ### Non-functional requirements
 - **Performance:** dashboard TTFB < 500 ms, and quick-add saves in < 300 ms (with an optimistic UI).
@@ -227,4 +231,6 @@ streaks(dailyStatuses across months): { current, best, noSpendThisMonth }
 - Big one-off purchases **can be excluded from pace** with the `is_one_off` flag, and they still count toward the budget (decided 2026-10-26).
 - **Savings goal for streaks** (decided 2026-10-27). Users can set a savings goal as a share of the budget, from onboarding on. Streaks and the calendar judge days against the budget minus that share. The headline safe-to-spend stays on the full budget, and the dashboard shows a separate "streak target today". The goal is stored on the budget row, so changing it applies from the current month and leaves earlier months' streaks alone.
 - **Month calendar on the dashboard** (decided 2026-10-27). The dashboard shows the current month's calendar. Tapping a day shows that day's spending against its streak target. Insights keeps its own calendar for browsing past months.
+- **Monthly income and savings rate** (decided 2026-10-27). Users can enter an optional monthly income, stored on the budget row so it is versioned by month like the savings goal. The dashboard shows the savings rate so far this month (everything spent, one-offs included) and the rate if the whole budget is spent. Income doesn't affect safe to spend or streaks. Income tracking stays a single number; it is not transaction-level income or net-worth tracking.
+- **Day-by-day streak breakdown** (decided 2026-10-27). The streak card lists the last 7 finished days marked underspent, overspent or no spend, and counts each kind for this month.
 - **No bank-specific CSV presets.** Import uses one generic column mapper. It guesses columns from common header names (date, amount, debit, credit, description, payee, memo) and the user confirms. The confirmed mapping is saved per user and reused next time. Presets for specific banks could be added later if needed (decided 2026-10-26).

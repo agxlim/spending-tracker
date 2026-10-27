@@ -13,6 +13,7 @@ import type { TransactionInput } from "@/lib/schemas";
 import { BudgetProgress } from "./budget-progress";
 import { MonthCalendar } from "./month-calendar";
 import { SafeToSpend } from "./safe-to-spend";
+import { SavingsRate } from "./savings-rate";
 import { StreakCard } from "./streak-card";
 
 export function DashboardView({
@@ -68,6 +69,7 @@ export function DashboardView({
         Add spending
       </Button>
       <BudgetProgress summary={summary} currency={currency} />
+      <SavingsRate summary={summary} currency={currency} />
       <StreakCard summary={summary} currency={currency} />
       <MonthCalendar days={summary.monthDays} today={today} currency={currency} />
 

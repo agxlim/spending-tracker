@@ -31,7 +31,7 @@ describe("transactionInput", () => {
 
 describe("onboardingInput", () => {
   it("validates currency, timezone and a positive budget", () => {
-    const ok = { currency: "USD", timezone: "America/New_York", amountCents: 200_000, savingsRateBps: 0 };
+    const ok = { currency: "USD", timezone: "America/New_York", amountCents: 200_000, savingsRateBps: 0, incomeCents: null };
     expect(onboardingInput.safeParse(ok).success).toBe(true);
     expect(onboardingInput.safeParse({ ...ok, currency: "usd" }).success).toBe(false);
     expect(onboardingInput.safeParse({ ...ok, timezone: "Nowhere/City" }).success).toBe(false);
@@ -41,13 +41,22 @@ describe("onboardingInput", () => {
 
 describe("budgetInput", () => {
   it("accepts a savings goal from 0% to 90% in whole basis points", () => {
-    const ok = { amountCents: 200_000, savingsRateBps: 1000 };
+    const ok = { amountCents: 200_000, savingsRateBps: 1000, incomeCents: null };
     expect(budgetInput.safeParse(ok).success).toBe(true);
     expect(budgetInput.safeParse({ ...ok, savingsRateBps: 0 }).success).toBe(true);
     expect(budgetInput.safeParse({ ...ok, savingsRateBps: 9000 }).success).toBe(true);
     expect(budgetInput.safeParse({ ...ok, savingsRateBps: 9001 }).success).toBe(false);
     expect(budgetInput.safeParse({ ...ok, savingsRateBps: -1 }).success).toBe(false);
     expect(budgetInput.safeParse({ ...ok, savingsRateBps: 12.5 }).success).toBe(false);
+  });
+
+  it("accepts no income or a positive whole-cent income", () => {
+    const ok = { amountCents: 200_000, savingsRateBps: 0, incomeCents: 400_000 };
+    expect(budgetInput.safeParse(ok).success).toBe(true);
+    expect(budgetInput.safeParse({ ...ok, incomeCents: null }).success).toBe(true);
+    expect(budgetInput.safeParse({ ...ok, incomeCents: 0 }).success).toBe(false);
+    expect(budgetInput.safeParse({ ...ok, incomeCents: -100 }).success).toBe(false);
+    expect(budgetInput.safeParse({ ...ok, incomeCents: 1.5 }).success).toBe(false);
   });
 });
 

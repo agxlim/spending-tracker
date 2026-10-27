@@ -16,6 +16,7 @@ export interface Budget {
   effectiveMonth: ISODate; // first day of the month the amount starts applying
   amountCents: Cents;
   savingsRateBps?: number; // share of the budget to keep unspent, in basis points; 0 when absent
+  incomeCents?: Cents | null; // monthly income, only used for the savings rate; null when not set
 }
 
 /** A savings goal can keep at most 90% of the budget unspent. */
@@ -153,4 +154,13 @@ export function dailyStatusHistory(
     days.push(...dailyStatus(paceBudgetForMonth(budgets, m), txns, m, today, firstActiveDay));
   }
   return days;
+}
+
+/**
+ * Share of `incomeCents` left after spending `spentCents`, in basis points
+ * (1000 = 10%), truncated toward zero. Negative when spending exceeds income.
+ */
+export function savingsRateBps(incomeCents: Cents, spentCents: Cents): number {
+  // BigInt keeps the multiplication exact for any safe-integer amounts.
+  return Number((BigInt(incomeCents - spentCents) * BigInt(10_000)) / BigInt(incomeCents));
 }

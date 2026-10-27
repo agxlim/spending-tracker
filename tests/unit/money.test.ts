@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { bpsToPercentString, centsToDecimalString, formatCents, parseCents, parsePercentBps } from "@/lib/money";
+import {
+  bpsToPercentString,
+  centsToDecimalString,
+  formatCents,
+  parseCents,
+  parseOptionalCents,
+  parsePercentBps,
+} from "@/lib/money";
 
 describe("parseCents", () => {
   it.each([
@@ -81,5 +88,14 @@ describe("bpsToPercentString", () => {
 
   it("round-trips through parsePercentBps", () => {
     for (const bps of [0, 1, 99, 100, 1250, 9000]) expect(parsePercentBps(bpsToPercentString(bps))).toBe(bps);
+  });
+});
+
+describe("parseOptionalCents", () => {
+  it("is null when blank, undefined when invalid, and cents otherwise", () => {
+    expect(parseOptionalCents("")).toBeNull();
+    expect(parseOptionalCents("   ")).toBeNull();
+    expect(parseOptionalCents("abc")).toBeUndefined();
+    expect(parseOptionalCents("4,000.50")).toBe(400_050);
   });
 });

@@ -20,6 +20,7 @@ Next.js (App Router) + TypeScript, Tailwind + shadcn/ui, Recharts, Supabase (Pos
 - One-offs (`is_one_off`) count against the budget but are ignored when judging whether a day is under or over pace.
 - Each budget row has an optional savings goal (`savings_rate_bps`, basis points, 0–9000). Pace and streaks are judged against the **streak budget** = `floor(budget × (10000 − savings_rate_bps) ÷ 10000)`; safe to spend still uses the full budget.
 - A day is under pace when its regular spending ≤ that day's streak target (the safe-to-spend formula run on the streak budget; equal to safe to spend when there's no savings goal). Streaks are runs of under-pace days and continue across months. Today doesn't count until it ends.
+- Each budget row has an optional monthly income (`income_cents`, null when not set). It is only used for the dashboard savings rate = `(income − everything spent this month) ÷ income` in basis points; it never affects safe to spend or streaks.
 - Categories come from a fixed list and are only used for insights. They never have their own limits.
 
 ## Never add
