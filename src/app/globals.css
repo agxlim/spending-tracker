@@ -20,6 +20,15 @@
   --success: #15803d;
   --warning: #b45309;
   --radius: 0.625rem;
+
+  /* Charts: categorical slots 1–2 and status colors, validated for CVD and contrast */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-reference: #898781;
+  --chart-grid: #e1e0d9;
+  --status-good: #0ca30c;
+  --status-good-soft: #bfe5bf;
+  --status-critical: #d03b3b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +50,9 @@
     --destructive-foreground: #171717;
     --success: #4ade80;
     --warning: #fbbf24;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-grid: #2c2c2a;
   }
 }
 
@@ -62,6 +74,11 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-status-good: var(--status-good);
+  --color-status-good-soft: var(--status-good-soft);
+  --color-status-critical: var(--status-critical);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);

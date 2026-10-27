@@ -121,3 +121,17 @@ export function paceSeries(budget: Cents, txns: Txn[], month: ISODate, today: IS
     };
   });
 }
+
+/**
+ * The month laid out as calendar weeks starting on Sunday; days outside the
+ * month are null.
+ */
+export function calendarWeeks(month: ISODate): (ISODate | null)[][] {
+  const days = eachDay(monthStart(month), monthEnd(month));
+  const leading = new Date(`${days[0]}T00:00:00Z`).getUTCDay();
+  const cells: (ISODate | null)[] = [...Array(leading).fill(null), ...days];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (ISODate | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}

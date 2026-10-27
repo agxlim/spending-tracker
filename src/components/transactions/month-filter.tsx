@@ -8,9 +8,16 @@ import { monthLabel } from "@/lib/format";
 import type { TransactionFilter } from "@/lib/transactions";
 import { cn } from "@/lib/utils";
 
-const monthParam = (month: ISODate) => `/transactions?month=${month.slice(0, 7)}`;
-
-export function MonthNav({ month, currentMonth }: { month: ISODate; currentMonth: ISODate }) {
+export function MonthNav({
+  month,
+  currentMonth,
+  basePath = "/transactions",
+}: {
+  month: ISODate;
+  currentMonth: ISODate;
+  basePath?: string;
+}) {
+  const monthParam = (m: ISODate) => `${basePath}?month=${m.slice(0, 7)}`;
   const next = addMonths(month, 1);
   const linkClass = "rounded-md px-3 py-2 text-sm hover:bg-muted";
   return (

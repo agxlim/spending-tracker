@@ -2,12 +2,19 @@
 // which avoids hydration mismatches.
 
 import type { ISODate } from "./dates";
-import { formatCents, type Cents } from "./money";
+import { centsToDecimalString, formatCents, type Cents } from "./money";
 
 const LOCALE = "en-US";
 
 export function money(cents: Cents, currency: string): string {
   return formatCents(cents, currency, LOCALE);
+}
+
+/** Short form for axis ticks: $1.2K. */
+export function compactMoney(cents: Cents, currency: string): string {
+  return new Intl.NumberFormat(LOCALE, { style: "currency", currency, notation: "compact" }).format(
+    centsToDecimalString(cents) as unknown as number,
+  );
 }
 
 // ISO dates are calendar days, so format them as UTC midnight to avoid shifting.

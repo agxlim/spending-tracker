@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Category } from "@/lib/categories";
 import {
+  calendarWeeks,
   categoryBreakdown,
   compareToLastMonth,
   paceSeries,
@@ -99,5 +100,28 @@ describe("paceSeries", () => {
     expect(series[2]).toEqual({ date: "2026-10-03", idealCents: 30_000, regularCents: 9_300, oneOffCents: 150_000 });
     expect(series[3]).toMatchObject({ regularCents: null, oneOffCents: null });
     expect(series[30].idealCents).toBe(310_000);
+  });
+});
+
+describe("calendarWeeks", () => {
+  it("lays out a month in Sunday-first weeks", () => {
+    // October 2026 starts on a Thursday
+    const weeks = calendarWeeks("2026-10-15");
+    expect(weeks).toHaveLength(5);
+    expect(weeks[0]).toEqual([null, null, null, null, "2026-10-01", "2026-10-02", "2026-10-03"]);
+    expect(weeks[4]).toEqual(["2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31"]);
+  });
+
+  it("handles a February that fits exactly in four weeks", () => {
+    // February 2026 starts on a Sunday and has 28 days
+    const weeks = calendarWeeks("2026-02-01");
+    expect(weeks).toHaveLength(4);
+    expect(weeks.flat().every((d) => d !== null)).toBe(true);
+  });
+
+  it("pads the last week", () => {
+    const weeks = calendarWeeks("2028-02-01"); // starts Tuesday, 29 days
+    expect(weeks.flat()).toHaveLength(35);
+    expect(weeks[4].slice(3)).toEqual([null, null, null, null]);
   });
 });
