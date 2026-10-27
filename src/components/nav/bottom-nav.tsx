@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/transactions", label: "Transactions" },
   { href: "/insights", label: "Insights" },
   { href: "/import", label: "Import" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function BottomNav() {
@@ -27,7 +28,7 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-14 items-center justify-center text-sm",
+                  "flex h-14 items-center justify-center text-xs",
                   active ? "font-semibold text-foreground" : "text-muted-foreground",
                 )}
               >
