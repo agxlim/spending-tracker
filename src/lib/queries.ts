@@ -82,3 +82,14 @@ export async function getBudgets(): Promise<Budget[]> {
   if (error) throw error;
   return data.map((b) => ({ effectiveMonth: b.effective_month, amountCents: Number(b.amount_cents) }));
 }
+
+export async function getImports() {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("imports")
+    .select("id, filename, row_count, imported_count, skipped_count, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
+}

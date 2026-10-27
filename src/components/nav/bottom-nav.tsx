@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/import", label: "Import" },
 ] as const;
 
 export function BottomNav() {
