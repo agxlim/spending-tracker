@@ -80,13 +80,14 @@ export async function getBudgets(): Promise<Budget[]> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("budgets")
-    .select("effective_month, amount_cents, savings_rate_bps")
+    .select("effective_month, amount_cents, savings_rate_bps, income_cents")
     .order("effective_month");
   if (error) throw error;
   return data.map((b) => ({
     effectiveMonth: b.effective_month,
     amountCents: Number(b.amount_cents),
     savingsRateBps: b.savings_rate_bps,
+    incomeCents: b.income_cents === null ? null : Number(b.income_cents),
   }));
 }
 

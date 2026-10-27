@@ -30,6 +30,8 @@ export const budgetInput = z.object({
     .int()
     .min(0, "Savings goal can't be negative")
     .max(MAX_SAVINGS_RATE_BPS, "Savings goal can be at most 90%"),
+  // Optional; null when not set.
+  incomeCents: cents.positive("Income must be more than zero").nullable(),
 });
 
 export const profileInput = z.object({

@@ -6,6 +6,8 @@ import type { DailyStatus } from "./budget";
 export interface Streaks {
   current: number;
   best: number;
+  underThisMonth: number; // finished days this month with some spending, under pace
+  overThisMonth: number;
   noSpendThisMonth: number;
 }
 
@@ -18,6 +20,8 @@ export function streaks(days: DailyStatus[], today: ISODate): Streaks {
   const thisMonth = monthStart(today);
   let run = 0;
   let best = 0;
+  let underThisMonth = 0;
+  let overThisMonth = 0;
   let noSpendThisMonth = 0;
 
   for (const day of days) {
@@ -28,8 +32,11 @@ export function streaks(days: DailyStatus[], today: ISODate): Streaks {
     } else {
       run = 0;
     }
-    if (day.status === "nospend" && monthStart(day.date) === thisMonth) noSpendThisMonth += 1;
+    if (monthStart(day.date) !== thisMonth) continue;
+    if (day.status === "under") underThisMonth += 1;
+    else if (day.status === "over") overThisMonth += 1;
+    else if (day.status === "nospend") noSpendThisMonth += 1;
   }
 
-  return { current: run, best, noSpendThisMonth };
+  return { current: run, best, underThisMonth, overThisMonth, noSpendThisMonth };
 }

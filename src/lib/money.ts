@@ -27,6 +27,15 @@ export function parseCents(input: string): Cents | null {
   return negative && cents !== 0 ? -cents : cents;
 }
 
+/**
+ * Like `parseCents` for an optional field: blank input is null (not set) and
+ * invalid input is undefined.
+ */
+export function parseOptionalCents(input: string): Cents | null | undefined {
+  if (input.trim() === "") return null;
+  return parseCents(input) ?? undefined;
+}
+
 /** "1234.50"-style decimal string for a cents value. */
 export function centsToDecimalString(cents: Cents): string {
   const sign = cents < 0 ? "-" : "";

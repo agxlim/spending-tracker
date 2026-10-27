@@ -6,6 +6,7 @@ import {
   dailyStatusHistory,
   paceBudgetForMonth,
   safeToSpendToday,
+  savingsRateBps,
   spentInRange,
   type Budget,
   type DailyStatus,
@@ -27,9 +28,16 @@ export interface DashboardSummary {
   remainingThisMonthCents: Cents; // budget − spent this month; negative when over
   daysLeft: number; // including today
   pacePercent: number; // share of the month elapsed by the end of today, 0–100
+  incomeCents: Cents | null; // monthly income, when set
+  savingsRateSoFarBps: number | null; // (income − spent this month) ÷ income; null without income
+  plannedSavingsRateBps: number | null; // (income − budget) ÷ income: the rate if the whole budget is spent
   streaks: Streaks;
+  recentDays: DailyStatus[]; // the last finished days (up to 7), oldest first, judged against the streak target
   monthDays: DailyStatus[]; // every day of today's month, judged against the streak target
 }
+
+/** How many finished days the streak card lists one by one. */
+export const RECENT_DAYS = 7;
 
 /** `txns` must cover `firstActiveDay`'s month through the end of `today`'s month. */
 export function dashboardSummary(
@@ -53,6 +61,7 @@ export function dashboardSummary(
   const spentThisMonth = spentInRange(txns, start, end);
   const totalDays = daysInMonth(today);
   const history = dailyStatusHistory(budgets, txns, firstActiveDay, today);
+  const income = row.incomeCents ?? null;
 
   return {
     budgetCents: budget,
@@ -66,7 +75,11 @@ export function dashboardSummary(
     remainingThisMonthCents: budget - spentThisMonth,
     daysLeft: totalDays - dayOfMonth(today) + 1,
     pacePercent: (dayOfMonth(today) / totalDays) * 100,
+    incomeCents: income,
+    savingsRateSoFarBps: income === null ? null : savingsRateBps(income, spentThisMonth),
+    plannedSavingsRateBps: income === null ? null : savingsRateBps(income, budget),
     streaks: streaks(history, today),
+    recentDays: history.filter((d) => d.date < today && d.status !== "inactive").slice(-RECENT_DAYS),
     monthDays: history.filter((d) => d.date >= start),
   };
 }

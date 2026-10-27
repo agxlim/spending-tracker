@@ -30,6 +30,7 @@ async function SettingsContent() {
         <BudgetForm
           amount={budget === null ? "" : centsToDecimalString(budget.amountCents)}
           savingsRate={budget?.savingsRateBps ? bpsToPercentString(budget.savingsRateBps) : ""}
+          income={budget?.incomeCents ? centsToDecimalString(budget.incomeCents) : ""}
         />
       </Section>
       <Section title="Currency and timezone">
