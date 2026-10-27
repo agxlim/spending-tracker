@@ -41,6 +41,21 @@ export function OnboardingForm() {
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="savingsRate">Savings goal (%)</Label>
+        <Input
+          id="savingsRate"
+          name="savingsRate"
+          inputMode="decimal"
+          placeholder="0"
+          aria-describedby="savings-help"
+        />
+        <p id="savings-help" className="text-sm text-muted-foreground">
+          Optional. The share of your budget you want left over. Streaks only count days you stay on pace for
+          the rest.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="currency">Currency</Label>
         <Select id="currency" name="currency" defaultValue="USD">
           {CURRENCIES.map((c) => (

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { BudgetForm, DeleteAccountForm, ProfileForm } from "@/components/settings/settings-forms";
 import { Button } from "@/components/ui/button";
-import { budgetForMonth } from "@/lib/budget";
-import { centsToDecimalString } from "@/lib/money";
+import { budgetRowForMonth } from "@/lib/budget";
+import { bpsToPercentString, centsToDecimalString } from "@/lib/money";
 import { getBudgets, requireProfile, requireUser } from "@/lib/queries";
 import { signOut } from "./actions";
 
@@ -23,11 +23,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 async function SettingsContent() {
   const [{ profile, today }, { user }, budgets] = await Promise.all([requireProfile(), requireUser(), getBudgets()]);
-  const budget = budgetForMonth(budgets, today);
+  const budget = budgetRowForMonth(budgets, today);
   return (
     <>
       <Section title="Budget">
-        <BudgetForm amount={budget === null ? "" : centsToDecimalString(budget)} />
+        <BudgetForm
+          amount={budget === null ? "" : centsToDecimalString(budget.amountCents)}
+          savingsRate={budget?.savingsRateBps ? bpsToPercentString(budget.savingsRateBps) : ""}
+        />
       </Section>
       <Section title="Currency and timezone">
         <ProfileForm currency={profile.currency} timezone={profile.timezone} />

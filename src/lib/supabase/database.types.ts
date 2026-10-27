@@ -35,9 +35,15 @@ export type Database = {
         Relationships: [];
       };
       budgets: {
-        Row: { id: string; user_id: string; effective_month: string; amount_cents: number };
-        Insert: { id?: string; user_id?: string; effective_month: string; amount_cents: number };
-        Update: { id?: string; user_id?: string; effective_month?: string; amount_cents?: number };
+        Row: { id: string; user_id: string; effective_month: string; amount_cents: number; savings_rate_bps: number };
+        Insert: { id?: string; user_id?: string; effective_month: string; amount_cents: number; savings_rate_bps?: number };
+        Update: {
+          id?: string;
+          user_id?: string;
+          effective_month?: string;
+          amount_cents?: number;
+          savings_rate_bps?: number;
+        };
         Relationships: [];
       };
       imports: {

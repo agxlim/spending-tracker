@@ -11,6 +11,7 @@ import { dashboardSummary } from "@/lib/dashboard";
 import type { ISODate } from "@/lib/dates";
 import type { TransactionInput } from "@/lib/schemas";
 import { BudgetProgress } from "./budget-progress";
+import { MonthCalendar } from "./month-calendar";
 import { SafeToSpend } from "./safe-to-spend";
 import { StreakCard } from "./streak-card";
 
@@ -67,7 +68,8 @@ export function DashboardView({
         Add spending
       </Button>
       <BudgetProgress summary={summary} currency={currency} />
-      <StreakCard streaks={summary.streaks} />
+      <StreakCard summary={summary} currency={currency} />
+      <MonthCalendar days={summary.monthDays} today={today} currency={currency} />
 
       <Dialog open={adding} onClose={() => setAdding(false)} title="Add spending">
         {adding && (

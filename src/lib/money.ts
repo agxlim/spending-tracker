@@ -40,3 +40,19 @@ export function formatCents(cents: Cents, currency: string, locale?: string): st
     centsToDecimalString(cents) as unknown as number,
   );
 }
+
+/**
+ * Parses a percentage like "10", "12.5" or "7.25%" into basis points
+ * (1000 = 10%). Returns null if the input isn't a valid percentage.
+ */
+export function parsePercentBps(input: string): number | null {
+  const m = /^(\d{1,3})(?:\.(\d{0,2}))?%?$/.exec(input.replace(/\s/g, ""));
+  if (!m) return null;
+  return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+}
+
+/** "12.5"-style percentage string for a basis-points value. */
+export function bpsToPercentString(bps: number): string {
+  const fraction = String(bps % 100).padStart(2, "0").replace(/0+$/, "");
+  return fraction ? `${Math.trunc(bps / 100)}.${fraction}` : String(Math.trunc(bps / 100));
+}

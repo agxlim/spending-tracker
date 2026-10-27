@@ -31,10 +31,11 @@ test("sign up, set a budget, add spending and see safe-to-spend change", async (
   await expect(page.getByRole("status")).toContainText(email);
   await page.goto(await magicLinkFor(email));
 
-  // Onboarding: set a budget (timezone is detected from the browser)
+  // Onboarding: set a budget and savings goal (timezone is detected from the browser)
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByLabel("Timezone")).toHaveValue("America/New_York");
   await page.getByLabel("Monthly budget").fill("3100");
+  await page.getByLabel("Savings goal (%)").fill("10");
   await page.getByRole("button", { name: "Start tracking" }).click();
 
   // Dashboard
@@ -42,6 +43,9 @@ test("sign up, set a budget, add spending and see safe-to-spend change", async (
   await expect(safeToSpend(page)).toHaveText(/^\$[\d,]+\.\d{2}$/);
   await expect(todayLine(page)).toHaveText("Nothing spent yet today");
   const before = await safeToSpend(page).textContent();
+  await expect(page.getByText("saving 10%")).toBeVisible();
+  // The month calendar opens on today
+  await expect(page.getByText(/^Today, /)).toBeVisible();
 
   // Regular spending today reduces what's left today
   await page.getByRole("button", { name: "Add spending" }).click();
@@ -49,6 +53,7 @@ test("sign up, set a budget, add spending and see safe-to-spend change", async (
   await page.getByLabel("Merchant or note").fill("Coffee and bagel");
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(todayLine(page)).toContainText("$20.00 spent");
+  await expect(page.getByText(/^Spent \$20\.00 of \$[\d,]+\.\d{2} so far/)).toBeVisible();
 
   // A one-off is reserved from the whole month, so the headline drops at once
   await page.getByRole("button", { name: "Add spending" }).click();
@@ -63,7 +68,7 @@ test("sign up, set a budget, add spending and see safe-to-spend change", async (
   const after = await safeToSpend(page).textContent();
   await page.reload();
   await expect(safeToSpend(page)).toHaveText(after!);
-  await page.getByRole("link", { name: "Transactions" }).click();
+  await page.getByRole("link", { name: "Transactions", exact: true }).click();
   await expect(page.getByText("Coffee and bagel")).toBeVisible();
   await expect(page.getByText("Flight")).toBeVisible();
 });

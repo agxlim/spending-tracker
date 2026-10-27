@@ -1,6 +1,7 @@
 // Zod schemas shared by forms and server actions.
 
 import { z } from "zod";
+import { MAX_SAVINGS_RATE_BPS } from "./budget";
 import { CATEGORIES } from "./categories";
 import { isValidISODate, isValidTimeZone } from "./dates";
 import { DATE_FORMATS } from "./csv/dates";
@@ -24,6 +25,11 @@ export type TransactionInput = z.infer<typeof transactionInput>;
 
 export const budgetInput = z.object({
   amountCents: cents.positive("Budget must be more than zero"),
+  savingsRateBps: z
+    .number()
+    .int()
+    .min(0, "Savings goal can't be negative")
+    .max(MAX_SAVINGS_RATE_BPS, "Savings goal can be at most 90%"),
 });
 
 export const profileInput = z.object({

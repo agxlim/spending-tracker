@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsToDecimalString, formatCents, parseCents } from "@/lib/money";
+import { bpsToPercentString, centsToDecimalString, formatCents, parseCents, parsePercentBps } from "@/lib/money";
 
 describe("parseCents", () => {
   it.each([
@@ -49,5 +49,37 @@ describe("formatting", () => {
     expect(formatCents(123456, "USD", "en-US")).toBe("$1,234.56");
     expect(formatCents(-250, "USD", "en-US")).toBe("-$2.50");
     expect(formatCents(1050, "EUR", "de-DE")).toBe("10,50 €");
+  });
+});
+
+describe("parsePercentBps", () => {
+  it.each([
+    ["10", 1000],
+    ["12.5", 1250],
+    ["7.25%", 725],
+    [" 0 ", 0],
+    ["100", 10_000],
+  ])("parses %s", (input, expected) => {
+    expect(parsePercentBps(input)).toBe(expected);
+  });
+
+  it.each(["", "-5", "abc", "1.234", "1000", ".", "10%%"])("rejects %j", (input) => {
+    expect(parsePercentBps(input)).toBeNull();
+  });
+});
+
+describe("bpsToPercentString", () => {
+  it.each([
+    [1000, "10"],
+    [1250, "12.5"],
+    [725, "7.25"],
+    [5, "0.05"],
+    [0, "0"],
+  ])("formats %i as %s", (bps, expected) => {
+    expect(bpsToPercentString(bps)).toBe(expected);
+  });
+
+  it("round-trips through parsePercentBps", () => {
+    for (const bps of [0, 1, 99, 100, 1250, 9000]) expect(parsePercentBps(bpsToPercentString(bps))).toBe(bps);
   });
 });
