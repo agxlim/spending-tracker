@@ -6,7 +6,7 @@ import { MonthCompare } from "@/components/insights/month-compare";
 import { PaceChart } from "@/components/insights/pace-chart";
 import { TopMerchants } from "@/components/insights/top-merchants";
 import { MonthNav } from "@/components/transactions/month-filter";
-import { budgetForMonth, dailyStatus } from "@/lib/budget";
+import { budgetForMonth, dailyStatus, paceBudgetForMonth } from "@/lib/budget";
 import { addMonths, dayOfMonth, monthEnd, monthStart, todayInTimeZone } from "@/lib/dates";
 import { categoryBreakdown, compareToLastMonth, paceSeries, topMerchants } from "@/lib/insights";
 import { getBudgets, getTransactions, requireProfile } from "@/lib/queries";
@@ -57,7 +57,7 @@ async function InsightsContent({ searchParams }: { searchParams: PageProps<"/ins
           <Card title="Calendar">
             <CalendarHeatmap
               month={month}
-              days={dailyStatus(budget, transactions, month, today, firstActiveDay)}
+              days={dailyStatus(paceBudgetForMonth(budgets, month), transactions, month, today, firstActiveDay)}
               currency={currency}
             />
           </Card>

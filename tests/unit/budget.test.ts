@@ -3,6 +3,7 @@ import {
   budgetForMonth,
   dailyStatus,
   dailyStatusHistory,
+  paceBudgetForMonth,
   safeToSpendToday,
   spentInRange,
   type Txn,
@@ -191,5 +192,72 @@ describe("dailyStatusHistory", () => {
     const oct1 = days.find((d) => d.date === "2026-10-01")!;
     expect(sep30).toMatchObject({ allowance: 30_000, status: "under" });
     expect(oct1).toMatchObject({ allowance: 10_000, status: "under" });
+  });
+});
+
+describe("paceBudgetForMonth", () => {
+  it("is the full budget without a savings goal", () => {
+    expect(paceBudgetForMonth([{ effectiveMonth: "2026-10-01", amountCents: 310_000 }], "2026-10-15")).toBe(310_000);
+  });
+
+  it("takes the savings goal off the budget", () => {
+    const budgets = [{ effectiveMonth: "2026-10-01", amountCents: 310_000, savingsRateBps: 1000 }];
+    expect(paceBudgetForMonth(budgets, "2026-10-15")).toBe(279_000);
+  });
+
+  it("floors to whole cents", () => {
+    const budgets = [{ effectiveMonth: "2026-10-01", amountCents: 100_001, savingsRateBps: 1250 }];
+    expect(paceBudgetForMonth(budgets, "2026-10-01")).toBe(87_500);
+  });
+
+  it("stays exact for the largest budgets", () => {
+    const budgets = [{ effectiveMonth: "2026-10-01", amountCents: Number.MAX_SAFE_INTEGER, savingsRateBps: 1000 }];
+    expect(paceBudgetForMonth(budgets, "2026-10-01")).toBe(8_106_479_329_266_891);
+  });
+
+  it("uses each month's own row and is null before the first budget", () => {
+    const budgets = [
+      { effectiveMonth: "2026-09-01", amountCents: 100_000 },
+      { effectiveMonth: "2026-10-01", amountCents: 100_000, savingsRateBps: 2000 },
+    ];
+    expect(paceBudgetForMonth(budgets, "2026-08-31")).toBeNull();
+    expect(paceBudgetForMonth(budgets, "2026-09-30")).toBe(100_000);
+    expect(paceBudgetForMonth(budgets, "2026-10-01")).toBe(80_000);
+  });
+});
+
+describe("dailyStatusHistory with a savings goal", () => {
+  it("judges days against the budget minus the savings goal", () => {
+    // $3,100 with 10% saved leaves $2,790: $90 on day one instead of $100.
+    const txns = [spend("2026-10-01", 9_500)];
+    const without = dailyStatusHistory([{ effectiveMonth: "2026-10-01", amountCents: 310_000 }], txns, "2026-10-01", "2026-10-02");
+    const withGoal = dailyStatusHistory(
+      [{ effectiveMonth: "2026-10-01", amountCents: 310_000, savingsRateBps: 1000 }],
+      txns,
+      "2026-10-01",
+      "2026-10-02",
+    );
+    expect(without[0]).toMatchObject({ allowance: 10_000, status: "under" });
+    expect(withGoal[0]).toMatchObject({ allowance: 9_000, status: "over" });
+  });
+
+  it("doesn't rewrite months before the goal was set", () => {
+    const budgets = [
+      { effectiveMonth: "2026-09-01", amountCents: 300_000 }, // $100/day in September
+      { effectiveMonth: "2026-10-01", amountCents: 310_000, savingsRateBps: 1000 }, // $90/day in October
+    ];
+    const txns = [spend("2026-09-30", 9_500), spend("2026-10-01", 9_500)];
+    const days = dailyStatusHistory(budgets, txns, "2026-09-01", "2026-10-02");
+    expect(days.find((d) => d.date === "2026-09-30")).toMatchObject({ status: "under" });
+    expect(days.find((d) => d.date === "2026-10-01")).toMatchObject({ allowance: 9_000, status: "over" });
+  });
+
+  it("leaves no room for regular spending when one-offs use up the rest", () => {
+    // $1,000 with 50% saved leaves $500; $600 of rent takes all of it.
+    const budgets = [{ effectiveMonth: "2026-10-01", amountCents: 100_000, savingsRateBps: 5000 }];
+    const txns = [spend("2026-10-01", 60_000, true), spend("2026-10-02", 100)];
+    const days = dailyStatusHistory(budgets, txns, "2026-10-01", "2026-10-03");
+    expect(days[0]).toMatchObject({ allowance: 0, status: "nospend" });
+    expect(days[1]).toMatchObject({ allowance: 0, status: "over" });
   });
 });

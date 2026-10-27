@@ -18,7 +18,8 @@ Next.js (App Router) + TypeScript, Tailwind + shadcn/ui, Recharts, Supabase (Pos
 - There is one total budget per calendar month. Unspent money never rolls over. A month's budget is the `budgets` row with the latest `effective_month` ≤ that month.
 - Safe to spend today = `max(0, floor((budget − all one-offs this month − regular spending before today) ÷ days left including today))`. It is recalculated daily.
 - One-offs (`is_one_off`) count against the budget but are ignored when judging whether a day is under or over pace.
-- A day is under pace when its regular spending ≤ that day's safe-to-spend amount. Streaks are runs of under-pace days and continue across months. Today doesn't count until it ends.
+- Each budget row has an optional savings goal (`savings_rate_bps`, basis points, 0–9000). Pace and streaks are judged against the **streak budget** = `floor(budget × (10000 − savings_rate_bps) ÷ 10000)`; safe to spend still uses the full budget.
+- A day is under pace when its regular spending ≤ that day's streak target (the safe-to-spend formula run on the streak budget; equal to safe to spend when there's no savings goal). Streaks are runs of under-pace days and continue across months. Today doesn't count until it ends.
 - Categories come from a fixed list and are only used for insights. They never have their own limits.
 
 ## Never add

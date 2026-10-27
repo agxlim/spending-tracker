@@ -15,7 +15,11 @@ import type { Cents } from "./money";
 export interface Budget {
   effectiveMonth: ISODate; // first day of the month the amount starts applying
   amountCents: Cents;
+  savingsRateBps?: number; // share of the budget to keep unspent, in basis points; 0 when absent
 }
+
+/** A savings goal can keep at most 90% of the budget unspent. */
+export const MAX_SAVINGS_RATE_BPS = 9000;
 
 export interface Txn {
   occurredOn: ISODate;
@@ -32,14 +36,31 @@ export interface DailyStatus {
   status: DayStatus;
 }
 
-/** Budget for the month containing `month`: the latest row effective on or before it. */
-export function budgetForMonth(budgets: Budget[], month: ISODate): Cents | null {
+/** Budget row for the month containing `month`: the latest one effective on or before it. */
+export function budgetRowForMonth(budgets: Budget[], month: ISODate): Budget | null {
   const start = monthStart(month);
   let best: Budget | null = null;
   for (const b of budgets) {
     if (b.effectiveMonth <= start && (!best || b.effectiveMonth > best.effectiveMonth)) best = b;
   }
-  return best ? best.amountCents : null;
+  return best;
+}
+
+/** Budget for the month containing `month`. */
+export function budgetForMonth(budgets: Budget[], month: ISODate): Cents | null {
+  return budgetRowForMonth(budgets, month)?.amountCents ?? null;
+}
+
+/**
+ * What pace and streaks are judged against for the month containing `month`:
+ * the budget minus the savings goal, floored to whole cents.
+ */
+export function paceBudgetForMonth(budgets: Budget[], month: ISODate): Cents | null {
+  const row = budgetRowForMonth(budgets, month);
+  if (!row) return null;
+  // BigInt keeps the multiplication exact for any safe-integer budget.
+  const kept = BigInt(10_000 - (row.savingsRateBps ?? 0));
+  return Number((BigInt(row.amountCents) * kept) / BigInt(10_000));
 }
 
 /** Net spending between `from` and `to` inclusive; refunds reduce it. */
@@ -117,7 +138,10 @@ export function dailyStatus(
   });
 }
 
-/** Daily statuses for every month from `firstActiveDay`'s month through `today`'s month. */
+/**
+ * Daily statuses for every month from `firstActiveDay`'s month through `today`'s
+ * month, judged against each month's budget minus its savings goal.
+ */
 export function dailyStatusHistory(
   budgets: Budget[],
   txns: Txn[],
@@ -126,7 +150,7 @@ export function dailyStatusHistory(
 ): DailyStatus[] {
   const days: DailyStatus[] = [];
   for (let m = monthStart(firstActiveDay); m <= today; m = addMonths(m, 1)) {
-    days.push(...dailyStatus(budgetForMonth(budgets, m), txns, m, today, firstActiveDay));
+    days.push(...dailyStatus(paceBudgetForMonth(budgets, m), txns, m, today, firstActiveDay));
   }
   return days;
 }

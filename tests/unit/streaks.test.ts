@@ -42,6 +42,14 @@ describe("streaks", () => {
     expect(streaks([], "2026-10-01")).toEqual({ current: 0, best: 0, noSpendThisMonth: 0 });
   });
 
+  it("breaks on a day under the full budget but over the savings-goal target", () => {
+    // $3,100 with 10% saved: $90 a day instead of $100.
+    const budgets = [{ effectiveMonth: "2026-10-01", amountCents: 310_000, savingsRateBps: 1000 }];
+    const txns: Txn[] = [{ occurredOn: "2026-10-02", amountCents: 9_500, isOneOff: false }];
+    const result = streaks(dailyStatusHistory(budgets, txns, "2026-10-01", "2026-10-05"), "2026-10-05");
+    expect(result).toEqual({ current: 2, best: 2, noSpendThisMonth: 3 });
+  });
+
   it("can be broken or restored by editing a past transaction", () => {
     const budgets = [{ effectiveMonth: "2026-10-01", amountCents: 310_000 }];
     const history = (txns: Txn[]) =>

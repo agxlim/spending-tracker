@@ -5,7 +5,7 @@ import type { ISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 // Status is carried by fill, icon and label together, never by color alone.
-const STATUS: Record<DayStatus, { label: string; icon: string; className: string }> = {
+export const STATUS: Record<DayStatus, { label: string; icon: string; className: string }> = {
   under: { label: "Under pace", icon: "✓", className: "bg-status-good text-[#0b0b0b]" },
   nospend: { label: "No-spend day", icon: "★", className: "bg-status-good-soft text-[#0b0b0b]" },
   over: { label: "Over pace", icon: "✕", className: "bg-status-critical text-white" },
@@ -15,14 +15,19 @@ const STATUS: Record<DayStatus, { label: string; icon: string; className: string
 const LEGEND: DayStatus[] = ["under", "nospend", "over"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/** With `onSelect`, each day is a button and `selected` is highlighted. */
 export function CalendarHeatmap({
   month,
   days,
   currency,
+  selected,
+  onSelect,
 }: {
   month: ISODate;
   days: DailyStatus[];
   currency: string;
+  selected?: ISODate;
+  onSelect?: (date: ISODate) => void;
 }) {
   const byDate = new Map(days.map((d) => [d.date, d]));
   const counts = Object.fromEntries(LEGEND.map((s) => [s, days.filter((d) => d.status === s).length]));
@@ -53,19 +58,39 @@ export function CalendarHeatmap({
                     ? `, spent ${money(day.spent, currency)} of ${money(day.allowance, currency)}`
                     : "";
                 const description = `${dayLabel(date)}: ${status.label}${detail}`;
+                const cell = cn(
+                  "flex aspect-square w-full flex-col items-center justify-center rounded-md text-xs",
+                  status.className,
+                );
+                const label = (
+                  <>
+                    <span className="tabular-nums">{Number(date.slice(8))}</span>
+                    <span aria-hidden className="text-[0.65rem] leading-none">
+                      {status.icon}
+                    </span>
+                  </>
+                );
                 return (
                   <td key={j} className="p-0">
-                    <div
-                      title={description}
-                      aria-label={description}
-                      role="img"
-                      className={cn("flex aspect-square flex-col items-center justify-center rounded-md text-xs", status.className)}
-                    >
-                      <span className="tabular-nums">{Number(date.slice(8))}</span>
-                      <span aria-hidden className="text-[0.65rem] leading-none">
-                        {status.icon}
-                      </span>
-                    </div>
+                    {onSelect ? (
+                      <button
+                        type="button"
+                        aria-label={description}
+                        aria-pressed={date === selected}
+                        onClick={() => onSelect(date)}
+                        className={cn(
+                          cell,
+                          "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                          date === selected && "ring-2 ring-inset ring-foreground",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ) : (
+                      <div title={description} aria-label={description} role="img" className={cell}>
+                        {label}
+                      </div>
+                    )}
                   </td>
                 );
               })}

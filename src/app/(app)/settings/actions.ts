@@ -3,17 +3,21 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { monthStart, todayInTimeZone } from "@/lib/dates";
-import { parseCents } from "@/lib/money";
+import { parseCents, parsePercentBps } from "@/lib/money";
 import { requireProfile, requireUser } from "@/lib/queries";
 import { budgetInput, profileInput } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { status: "idle" | "saved" | "error"; message?: string };
 
-/** Sets the budget from this month onward; earlier months keep theirs. */
+/** Sets the budget and savings goal from this month onward; earlier months keep theirs. */
 export async function updateBudget(_prev: FormState, formData: FormData): Promise<FormState> {
   const amountCents = parseCents(String(formData.get("budget") ?? ""));
-  const parsed = budgetInput.safeParse({ amountCents });
+  // Blank means no savings goal.
+  const rateInput = String(formData.get("savingsRate") ?? "").trim();
+  const savingsRateBps = rateInput === "" ? 0 : parsePercentBps(rateInput);
+  if (savingsRateBps === null) return { status: "error", message: "Enter your savings goal as a percentage, like 10." };
+  const parsed = budgetInput.safeParse({ amountCents, savingsRateBps });
   if (amountCents === null || !parsed.success) {
     return { status: "error", message: parsed.error?.issues[0].message ?? "Enter an amount like 2000 or 2000.00." };
   }
@@ -22,7 +26,14 @@ export async function updateBudget(_prev: FormState, formData: FormData): Promis
   const { supabase } = await requireUser();
   const { error } = await supabase
     .from("budgets")
-    .upsert({ effective_month: monthStart(today), amount_cents: parsed.data.amountCents }, { onConflict: "user_id,effective_month" });
+    .upsert(
+      {
+        effective_month: monthStart(today),
+        amount_cents: parsed.data.amountCents,
+        savings_rate_bps: parsed.data.savingsRateBps,
+      },
+      { onConflict: "user_id,effective_month" },
+    );
   if (error) return { status: "error", message: "Couldn't save your budget. Try again." };
 
   refresh();

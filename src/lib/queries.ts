@@ -78,9 +78,16 @@ export async function getMerchantCategories(): Promise<Record<string, Category>>
 
 export async function getBudgets(): Promise<Budget[]> {
   const { supabase } = await requireUser();
-  const { data, error } = await supabase.from("budgets").select("effective_month, amount_cents").order("effective_month");
+  const { data, error } = await supabase
+    .from("budgets")
+    .select("effective_month, amount_cents, savings_rate_bps")
+    .order("effective_month");
   if (error) throw error;
-  return data.map((b) => ({ effectiveMonth: b.effective_month, amountCents: Number(b.amount_cents) }));
+  return data.map((b) => ({
+    effectiveMonth: b.effective_month,
+    amountCents: Number(b.amount_cents),
+    savingsRateBps: b.savings_rate_bps,
+  }));
 }
 
 export async function getImports() {

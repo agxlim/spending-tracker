@@ -21,7 +21,7 @@ function Message({ state }: { state: FormState }) {
   );
 }
 
-export function BudgetForm({ amount }: { amount: string }) {
+export function BudgetForm({ amount, savingsRate }: { amount: string; savingsRate: string }) {
   const id = useId();
   const [state, action, pending] = useActionState(updateBudget, IDLE);
   return (
@@ -31,6 +31,20 @@ export function BudgetForm({ amount }: { amount: string }) {
         <Input id={id} name="budget" inputMode="decimal" defaultValue={amount} required aria-describedby={`${id}-help`} />
         <p id={`${id}-help`} className="text-xs text-muted-foreground">
           Applies to this month and every month after, until you change it.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`${id}-savings`}>Savings goal (%)</Label>
+        <Input
+          id={`${id}-savings`}
+          name="savingsRate"
+          inputMode="decimal"
+          placeholder="0"
+          defaultValue={savingsRate}
+          aria-describedby={`${id}-savings-help`}
+        />
+        <p id={`${id}-savings-help`} className="text-xs text-muted-foreground">
+          The share of your budget you want left over. Streaks count days you stay on pace for the rest.
         </p>
       </div>
       <Message state={state} />
