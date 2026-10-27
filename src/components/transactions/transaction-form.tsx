@@ -19,11 +19,14 @@ export function TransactionForm({
   today,
   remembered,
   onDone,
+  onSubmit,
 }: {
   transaction?: Transaction;
   today: ISODate;
   remembered: Record<string, Category>;
   onDone: () => void;
+  /** Takes over saving a new transaction, e.g. to update the page optimistically. */
+  onSubmit?: (input: TransactionInput) => void;
 }) {
   const id = useId();
   const [amount, setAmount] = useState(transaction ? centsToDecimalString(transaction.amountCents) : "");
@@ -46,6 +49,10 @@ export function TransactionForm({
       return;
     }
     const input: TransactionInput = { occurredOn, amountCents, description, category, isOneOff };
+    if (onSubmit && !transaction) {
+      onSubmit(input);
+      return;
+    }
     startTransition(async () => {
       const result = await saveTransaction(transaction?.id ?? null, input);
       if (result.ok) onDone();

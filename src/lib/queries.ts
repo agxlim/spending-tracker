@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import type { Budget } from "./budget";
 import type { Category } from "./categories";
 import { todayInTimeZone, type ISODate } from "./dates";
 import { createClient } from "./supabase/server";
@@ -73,4 +74,11 @@ export async function getMerchantCategories(): Promise<Record<string, Category>>
     for (const row of data) remembered[row.merchant_key] = row.category;
     if (data.length < PAGE_SIZE) return remembered;
   }
+}
+
+export async function getBudgets(): Promise<Budget[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.from("budgets").select("effective_month, amount_cents").order("effective_month");
+  if (error) throw error;
+  return data.map((b) => ({ effectiveMonth: b.effective_month, amountCents: Number(b.amount_cents) }));
 }
