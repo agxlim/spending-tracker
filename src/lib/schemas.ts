@@ -9,6 +9,10 @@ import { MAX_CSV_ROWS } from "./csv/parse";
 const cents = z.number().int().refine(Number.isSafeInteger, "Amount is too large");
 const isoDate = z.string().refine(isValidISODate, "Invalid date");
 
+export const loginInput = z.object({
+  email: z.email("Enter a valid email address"),
+});
+
 export const transactionInput = z.object({
   occurredOn: isoDate,
   amountCents: cents.refine((v) => v !== 0, "Amount can't be zero"),
